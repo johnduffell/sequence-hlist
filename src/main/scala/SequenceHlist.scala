@@ -45,20 +45,20 @@ object SequenceHlist {
 
 }
 
-object UseHlistDemoApp extends App {
-
-  import SequenceHlist._
-
-  val inFile = Future(StdIn.readLine("Filename: ")).map { passthru => println(passthru); passthru }
-  val search = inFile.flatMap { _ => Future(StdIn.readLine("Search: ")).map { passthru => println(passthru); passthru } }
-  val source = inFile.flatMap { in => Future(Source.fromFile(in).getLines) }
-
-  val result = (search :: source :: HNil).sequence.map {
-    case (searchVal :: sourceVal :: HNil) =>
-      sourceVal.contains(searchVal)
-  }
-
-  val awaited = Await.result(result, Duration.Inf)
-  println(s"Found in file?: $awaited")
-
-}
+//object UseHlistDemoApp extends App {
+//
+//  import SequenceHlist._
+//
+//  val inFile = Future(StdIn.readLine("Filename: ")).map { passthru => println(passthru); passthru }
+//  val search = inFile.flatMap { _ => Future(StdIn.readLine("Search: ")).map { passthru => println(passthru); passthru } }
+//  val source = inFile.flatMap { in => Future(Source.fromFile(in).getLines) }
+//
+//  val result = (search :: source :: HNil).sequence.map {
+//    case (searchVal :: sourceVal :: HNil) =>
+//      sourceVal.contains(searchVal)
+//  }
+//
+//  val awaited = Await.result(result, Duration.Inf)
+//  println(s"Found in file?: $awaited")
+//
+//}

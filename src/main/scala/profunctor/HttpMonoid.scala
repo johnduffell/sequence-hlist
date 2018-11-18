@@ -19,6 +19,12 @@ object HttpMonoid {
     def dimap[NEWIN, NEWOUT](outerPre: NEWIN => IN, outerPost: OUT => NEWOUT): HTTPOperation[NEWIN, NEWOUT] =
       HTTPOperation(outerPre andThen createFirstRequest, List(), processFinalResponse andThen outerPost)
 
+    def map[NEWOUT]( outerPost: OUT => NEWOUT): HTTPOperation[IN, NEWOUT] =
+      HTTPOperation(createFirstRequest, List(), processFinalResponse andThen outerPost)
+
+    def contramap[NEWIN](outerPre: NEWIN => IN): HTTPOperation[NEWIN, OUT] =
+      HTTPOperation(outerPre andThen createFirstRequest, List(), processFinalResponse)
+
   }
 
   val init: HTTPOperation[Request, Response] = HTTPOperation(identity, List(), identity)

@@ -41,3 +41,10 @@ lazy val scissors = project.settings(scalaSettings).settings(
   libraryDependencies ++= Seq(
   )
 )
+
+lazy val step = project.settings(scalaSettings).settings(
+  libraryDependencies ++= Seq(
+    "com.typesafe.play" %% "play-json" % "2.6.10",
+    "org.typelevel" %% "cats-core" % "1.4.0"
+  )
+)

@@ -10,50 +10,42 @@ import scala.util.{Failure, Success, Try}
 
 object Handler extends App {
 
-  /*
-  https://github.com/guardian/support-workers/blob/master/cloud-formation/src/templates/state-machine.yaml
-  step converts json to json, and can
-    retry/emailRetry
-    catch
-    run in parallel
-    end
-
-   */
-
   case class Initial(data: String)
-  implicit lazy val iF: OFormat[Initial] = Json.format[Initial]
-
   case class NextState(moreData: String)
-  implicit lazy val nF: OFormat[NextState] = Json.format[NextState]
-
   case class FinalState(finalData: String)
-  implicit lazy val fF: OFormat[FinalState] = Json.format[FinalState]
 
-  def step1: Initial => NextState =  { initial: Initial =>
+  def step1(initial: Initial): NextState =  {
     println("RUN STEP 1")
     NextState(initial.data)
   }
 
-  def step2: NextState => FinalState =  { nextState: NextState =>
+  def step2(nextState: NextState): FinalState = {
     println("RUN STEP 2")
     FinalState(nextState.moreData)
   }
 
-  lazy val fst = TaskStep(step1, EndStep(step2))
+  lazy val program = TaskStep(step1, EndStep(step2))
 
-  lazy val compiledSteps = InterpJson[Initial].apply(fst)
+  implicit lazy val iF: OFormat[Initial] = Json.format[Initial]
+  implicit lazy val nF: OFormat[NextState] = Json.format[NextState]
+  implicit lazy val fF: OFormat[FinalState] = Json.format[FinalState]
+
+  lazy val interpretedViaJson = InterpJson[Initial].apply(program)
 
   override def main(args: Array[String]): Unit = {
-    val finalLocal = InterpLocal(Initial("hello"), fst)
-    println(s"final local: $finalLocal")
-    println(s"compiledSteps: $compiledSteps")
-    val finalString = CompiledSteps.runLocal(compiledSteps)(Initial("hello"))
-    println(s"final via json: $finalString")
+
+    val interpretedDirectly = InterpLocal(Initial("hello"), program)
+    println(s"interpretedDirectly: $interpretedDirectly")
+
+    println(s"interpretedViaJson: $interpretedViaJson")
+
+    val runLocallyViaJson = CompiledSteps.runLocal(interpretedViaJson)(Initial("hello"))
+    println(s"runLocallyViaJson: $runLocallyViaJson")
+
     val handlerFunctionName = this.getClass.getCanonicalName.replaceAll("""\$$""", "") + "::apply"
-    val cfn = CompiledSteps.toCFN(compiledSteps, handlerFunctionName, ENV_VAR)
+    val cfn = CompiledSteps.toCFN(interpretedViaJson, handlerFunctionName, ENV_VAR)
     println(s"CFN: $cfn")
     val cfnRaw = Json.prettyPrint(Json.toJson(cfn))
-    println(s"CFN script: \n$cfnRaw")
     Files.write(Paths.get("step/target/generated.cfn.json"), cfnRaw.getBytes(StandardCharsets.UTF_8))
   }
 
@@ -64,7 +56,7 @@ object Handler extends App {
     val res = for {
       envLambdaId <- Try(System.getenv(ENV_VAR))
       lambdaId <- LambdaId.fromEnv(envLambdaId)
-      output <- CompiledSteps.runSingle(compiledSteps, lambdaId, Json.parse(inputStream)) match {
+      output <- CompiledSteps.runSingle(interpretedViaJson, lambdaId, Json.parse(inputStream)) match {
         case None => Failure(new RuntimeException("oops probably couldn't deserialise"))
         case Some(result ) => Success(result)
       }

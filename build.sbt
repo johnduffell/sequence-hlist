@@ -10,7 +10,7 @@ val scalaSettings = Seq(
 
 libraryDependencies ++= Seq(
   "org.typelevel" %% "cats" % "0.9.0",
-  "com.chuusai" %% "shapeless" % "2.3.2"
+  "com.chuusai" %% "shapeless" % "2.3.3"
 )
 
 lazy val root = (project in file(".")).aggregate(takeaway, bowling, testing)
@@ -50,4 +50,11 @@ lazy val step = project.settings(scalaSettings).settings(
   )
 ).settings(
   assemblyJarName := "step.jar"
+)
+
+lazy val abs = project.settings(scalaSettings).settings(
+  libraryDependencies ++= Seq(
+    "org.typelevel" %% "cats-core" % "1.4.0",
+    "com.chuusai" %% "shapeless" % "2.3.3"
+  )
 )
